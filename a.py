@@ -5,7 +5,9 @@ import sys
 sg.theme('DarkAmber')  
 layout = [  [sg.Text('Change Permissions')],
             [sg.Text('Enter IP'), sg.InputText(key="ip")],
-            [sg.Button('Accept'), sg.Button('Clear')],
+            # [sg.Button('Accept'), sg.Button('Clear')],
+            [sg.InputCombo(('ACCEPT', 'REJECT','DROP'),enable_events=True, key='action',size=(20,3)),
+            sg.Button('Test'),sg.Button('Clear')],
             [sg.Button('View')],[sg.Output(size=(100,20),key="op")],
             [sg.Exit()] ]
 
@@ -25,7 +27,7 @@ def runCommand(cmd, timeout=None, window=None):
 
 
 def create_command(type1,ip,port,io,dport): 
-    command="iptables"
+    command="sudo iptables"
     if type1!="":
         command+=" "
         command+=type1
@@ -58,9 +60,10 @@ while True:
         runCommand(cmd, window=window)
 
 
-    if event in ('Accept'):
+    if event in ('Test'):
         cmd=""
-        cmd=create_command("-A INPUT",values["ip"],"","ACCEPT","")
+        action=values['action']
+        cmd=create_command("-A INPUT",values["ip"],"",action,"")
         runCommand(cmd, window=window)
         print(cmd)
 window.close()
