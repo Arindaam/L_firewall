@@ -4,9 +4,9 @@ import subprocess
 import sys
 sg.theme('DarkAmber')  
 layout = [  [sg.Text('Change Permissions')],
-            [sg.Text('Enter IP'), sg.InputText(key="ip")],
-            # [sg.Button('Accept'), sg.Button('Clear')],
-            [sg.InputCombo(('ACCEPT', 'REJECT','DROP'),enable_events=True, key='action',size=(20,3)),
+            [sg.Text('IP'), sg.InputText(key="ip",size=(20,1)),
+            sg.Text('Protocol'), sg.InputText(key="protocol",size=(10,1)),sg.Text('Destination Port'), sg.InputText(key="dport",size=(10,1))],
+            [sg.InputCombo(('ACCEPT', 'REJECT','DROP'),default_value='ACCEPT',enable_events=True, key='action',size=(20,3)),
             sg.Button('Test'),sg.Button('Clear')],
             [sg.Button('View')],[sg.Output(size=(100,20),key="op")],
             [sg.Exit()] ]
@@ -26,14 +26,14 @@ def runCommand(cmd, timeout=None, window=None):
     return (retval, output)  
 
 
-def create_command(type1,ip,port,io,dport): 
+def create_command(type1,ip,protocol,io,dport): 
     command="sudo iptables"
     if type1!="":
         command+=" "
         command+=type1
-    if port!="":
+    if protocol!="":
         command+=" -p "
-        command+=port
+        command+=protocol
     if dport!="":
         command+=" --dport "
         command+=dport
@@ -63,7 +63,7 @@ while True:
     if event in ('Test'):
         cmd=""
         action=values['action']
-        cmd=create_command("-A INPUT",values["ip"],"",action,"")
+        cmd=create_command("-A INPUT",values["ip"],values["protocol"],action,values["dport"])
         runCommand(cmd, window=window)
         print(cmd)
 window.close()
