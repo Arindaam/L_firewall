@@ -67,7 +67,7 @@ while True:
         cmd="sudo iptables -P "+values["chains"]+" "+values["accept"]
         runCommand(cmd, window=window)
         print(cmd)
-    if event in ('Test'):
+    if event in ('Insert'):
         cmd=""
         action=values['action']
         cmd="sudo iptables "+values["append"]+values["chains"]+create_command(values["ip"],values["protocol"],action,values["dport"])
