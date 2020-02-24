@@ -8,7 +8,7 @@ layout = [  [sg.Text('Change Permissions')],
 	     sg.Button('Change Policies')],
 	    [sg.Text('To Bolck IP')],
             [sg.Text('Append'),sg.InputCombo(('-A ', ' -I '),default_value=' -A ',enable_events=True, key='append',size=(10,1)),
-             sg.Text('IP'), sg.InputText(key="ip",size=(20,1)),
+             sg.Text('IP/MAC'), sg.InputText(key="ip",size=(20,1)),
             sg.Text('Protocol'), sg.InputText(key="protocol",size=(10,1)),sg.Text('Destination Port'), sg.InputText(key="dport",size=(10,1)),
             sg.InputCombo(('ACCEPT', 'REJECT','DROP'),default_value='ACCEPT',enable_events=True, key='action',size=(20,3))],
             [sg.Text('Chains'),sg.InputCombo(('INPUT', 'FORWARD','OUTPUT'),default_value='OUTPUT',enable_events=True, key='chains',size=(20,3))],
@@ -41,7 +41,10 @@ def create_command(ip,protocol,io,dport):
         command+=" --dport "
         command+=dport
     if ip!="":
-        command+=" -s "
+        if ':' in ip:
+            command+= ' -m mac --mac-source '
+        else:
+            command+=" -s "
         command+=ip
     if io!="":
         command+=" -j "
@@ -76,6 +79,7 @@ while True:
         
     if event in ('Clear'):   
         window.FindElement('op').Update('')
+        
     if event in ('Save'):
         cmd="service netfilter-persistent start"
         runCommand(cmd, window=window)
