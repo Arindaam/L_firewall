@@ -3,17 +3,37 @@ import os
 import subprocess
 import sys
 sg.theme('DarkAmber')  
-layout = [  [sg.Text('Change Permissions')],
-            [ sg.InputCombo((' ACCEPT',' DROP'),default_value='DROP',enable_events=True, key='accept',size=(20,3)),
-	     sg.Button('Change Policies')],
-	    [sg.Text('To Bolck IP')],
-            [sg.Text('Append'),sg.InputCombo(('-A ', ' -I '),default_value=' -A ',enable_events=True, key='append',size=(10,1)),
-             sg.Text('IP/MAC'), sg.InputText(key="ip",size=(20,1)),
-            sg.Text('Protocol'), sg.InputText(key="protocol",size=(10,1)),sg.Text('Destination Port'), sg.InputText(key="dport",size=(10,1)),
-            sg.InputCombo(('ACCEPT', 'REJECT','DROP'),default_value='ACCEPT',enable_events=True, key='action',size=(20,3))],
-            [sg.Text('Chains'),sg.InputCombo(('INPUT', 'FORWARD','OUTPUT'),default_value='OUTPUT',enable_events=True, key='chains',size=(20,3))],
-            [sg.Button('Insert'),sg.Button('Flush'),sg.Button('Save')],
-            [sg.Button('View')],[sg.Output(size=(100,20),key="op")],[sg.Button('Clear')]]   
+layout = [  
+    
+    
+            [sg.Text('Change Permissions')],
+            
+            [sg.InputCombo((' ACCEPT',' DROP'),default_value='DROP',enable_events=True, key='accept',size=(20,3)),sg.Button('Change Policies')],
+            
+            [
+                     sg.Text('Append'),sg.InputCombo(('-A ', ' -I '),default_value=' -A ',enable_events=True, key='append',size=(4,3)),
+                     sg.Text('Select Chain'),sg.InputCombo(('INPUT ', 'FORWARD ','OUTPUT '),default_value='OUTPUT',enable_events=True,key='chain',size=(10,3)),
+                     sg.Text('Source IP/MAC'), sg.InputText(key="sip",size=(20,1)),
+                     sg.Text('Destination IP'), sg.InputText(key="dip",size=(20,1))
+            ],
+            
+	    [ 
+                
+		    sg.Text('Protocol'),sg.InputText(key="protocol",size=(10,1)),
+                    sg.Text('       Destination Port'), sg.InputText(key="dport",size=(10,1)),
+                    sg.Text('       Source Port'), sg.InputText(key="sport",size=(10,1)),sg.Text('       '),
+              	    sg.InputCombo(('ACCEPT', 'REJECT','DROP'),default_value='ACCEPT',enable_events=True, key='action',size=(10,3)),
+                    sg.Button('Insert')
+                
+            ],
+	
+            [sg.Button('View'),sg.Button('Clear')],[sg.Output(size=(100,20),key="op")],
+            
+            [sg.Button('Delete'),sg.Text('Line number'), sg.InputText(key="delete",size=(10,1)),sg.Button('Flush')],
+            
+            
+            
+        ]   
 
 window = sg.Window('Linux Firewall', layout)    
 
@@ -30,7 +50,7 @@ def runCommand(cmd, timeout=None, window=None):
     return (retval, output)  
 
 
-def create_command(ip,protocol,io,dport): 
+def create_command(sip,dip,protocol,io,dport,sport): 
     command=""
                  
    
@@ -40,12 +60,18 @@ def create_command(ip,protocol,io,dport):
     if dport!="":
         command+=" --dport "
         command+=dport
-    if ip!="":
-        if ':' in ip:
+    if dport!="":
+        command+=" --sport "
+        command+=sport
+    if sip!="":
+        if ':' in sip:
             command+= ' -m mac --mac-source '
         else:
             command+=" -s "
-        command+=ip
+        command+=sip
+    if dip!="":
+        command+=" -d "
+        command+=dip
     if io!="":
         command+=" -j "
         command+=io
@@ -61,31 +87,29 @@ while True:
     if event in ('Flush'):
         qcmd = 'sudo iptables -F'
         runCommand(qcmd, window=window)
+        window.FindElement('op').Update('')
         
     if event in ('View'):
-        cmd = 'sudo iptables -L'
+        cmd = 'sudo iptables -L --line-numbers'
         runCommand(cmd, window=window)
     if event in ('Change Policies'):
         cmd=""
-        cmd="sudo iptables -P "+values["chains"]+" "+values["accept"]
+        cmd="sudo iptables -P "+values["chain"]+" "+values["accept"]
         runCommand(cmd, window=window)
         print(cmd)
     if event in ('Insert'):
         cmd=""
         action=values['action']
-        cmd="sudo iptables "+values["append"]+values["chains"]+create_command(values["ip"],values["protocol"],action,values["dport"])
+        cmd="sudo iptables "+values["append"]+values["chain"]+create_command(values["sip"],values["dip"],values["protocol"],action,values["dport"],values["sport"])
         runCommand(cmd, window=window)
         print(cmd)
         
     if event in ('Clear'):   
         window.FindElement('op').Update('')
-        
-    if event in ('Save'):
-        cmd="service netfilter-persistent start"
-        runCommand(cmd, window=window)
-        cmd1="netfilter-persistent save"
-        runCommand(cmd1, window=window)
-        #cmd2="ip6tables-save"
-        #runCommand(cmd2, window=window)
+
+    if event in ('Delete'):   
+        cmd ="sudo iptables -D "
+        cmd=cmd+values['chain']+" "+values['delete']
+        runCommand(cmd,window=window)
 window.close()
     
